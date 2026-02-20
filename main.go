@@ -295,9 +295,11 @@ func pad2(n int) string {
 
 func main() {
 	a := app.NewWithID("com.flipclock.app")
+	a.SetIcon(resourceIconPng)
 	a.Settings().SetTheme(flipTheme{})
 
 	w := a.NewWindow("FlipClock")
+	w.SetIcon(resourceIconPng)
 	w.Resize(fyne.NewSize(800, 500))
 
 	// ── Clock widgets ──────────────────────────
@@ -377,8 +379,7 @@ func main() {
 			}),
 		)
 		desk.SetSystemTrayMenu(trayMenu)
-		// Optional: desk.SetSystemTrayIcon(resourceIconPng)
-		// Add an icon PNG to the project and use fyne bundle to embed it.
+		desk.SetSystemTrayIcon(resourceIconPng)
 	}
 
 	// Intercept window close → minimize to tray instead of quit
