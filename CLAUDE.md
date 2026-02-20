@@ -53,8 +53,6 @@ flipclock/
 ├── font.go          # Embedded font resource (BebasNeue via go:embed)
 ├── fonts/
 │   └── BebasNeue-Regular.ttf   # Custom display font (61KB, OFL license)
-├── docs/
-│   └── BRIEF.md     # Project brief and scope definition
 ├── go.mod           # Module definition (flipclock)
 ├── go.sum           # Dependency checksums
 ├── CLAUDE.md        # This file

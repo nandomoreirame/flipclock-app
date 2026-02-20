@@ -55,8 +55,8 @@ xcode-select --install
 
 ```bash
 # Clonar o repositorio
-git clone https://github.com/nandomoreirame/flip-clock-app.git
-cd flip-clock-app
+git clone https://github.com/nandomoreirame/flipclock-app.git
+cd flipclock-app
 
 # Baixar dependencias
 go mod tidy
@@ -107,13 +107,19 @@ KDE, XFCE, macOS e Windows funcionam out-of-the-box.
 ## Estrutura do projeto
 
 ```
-flip-clock-app/
+flipclock-app/
 ├── main.go                      # Aplicacao (widgets, layout, tray, loop)
 ├── font.go                      # Fonte embutida via go:embed
+├── bundled.go                   # Icone embutido via fyne bundle
 ├── fonts/
 │   └── BebasNeue-Regular.ttf    # Fonte display (61KB, OFL license)
-├── docs/
-│   └── BRIEF.md                 # Brief do projeto
+├── images/
+│   ├── flipclock.png            # Icone do app (256x256)
+│   ├── flipclock@2x.png         # Icone retina (512x512)
+│   └── flipclock.svg            # Icone vetorial
+├── install.sh                   # Installer automatico (Linux/macOS/Windows)
+├── flipclock.desktop            # Desktop entry para Linux
+├── FyneApp.toml                 # Metadados do app para fyne package
 ├── go.mod                       # Definicao do modulo Go
 ├── go.sum                       # Checksums das dependencias
 ├── CLAUDE.md                    # Instrucoes para o Claude Code
@@ -140,28 +146,77 @@ A animacao usa `fyne.NewAnimation()` com duracao de 300ms e curva ease-in-out, d
 
 As abas usam a mesma cor do card (`#1A1A1A`), simulando o efeito mecanico de um flip clock real.
 
-## Icone personalizado no tray
+## Instalacao no sistema
 
-Para adicionar um icone ao system tray:
+O jeito mais facil de instalar e usar o script automatico:
 
-1. Coloque `icon.png` na raiz do projeto
-2. Instale o bundler do Fyne:
+```bash
+./install.sh
+```
 
-   ```bash
-   go install fyne.io/fyne/v2/cmd/fyne@latest
-   ```
+O script detecta o OS (Linux, macOS, Windows), instala dependencias necessarias, compila o binario otimizado e registra o app no launcher do sistema.
 
-3. Gere o recurso embutido:
+Para desinstalar:
 
-   ```bash
-   fyne bundle icon.png > bundled.go
-   ```
+```bash
+./install.sh --uninstall
+```
 
-4. No `main.go`, descomente:
+### O que o install.sh faz por OS
 
-   ```go
-   desk.SetSystemTrayIcon(resourceIconPng)
-   ```
+**Linux (Debian/Ubuntu/Fedora/Arch):**
+- Instala gcc e bibliotecas OpenGL (pede confirmacao antes de usar sudo)
+- Compila o binario otimizado
+- Instala em `~/.local/bin/flipclock`
+- Registra icone e .desktop entry no launcher
+
+**macOS:**
+- Verifica Xcode CLI tools
+- Compila e cria um .app bundle com Info.plist e icone .icns
+- Instala em `~/Applications/FlipClock.app`
+
+**Windows (MSYS2/Git Bash):**
+- Verifica gcc (TDM-GCC ou MSYS2)
+- Compila .exe sem janela de console
+- Instala em `%LOCALAPPDATA%\FlipClock\`
+- Cria atalho no menu iniciar
+
+### Instalacao manual
+
+Se preferir instalar manualmente, veja as instrucoes por OS:
+
+<details>
+<summary>Linux (manual)</summary>
+
+```bash
+go build -ldflags "-s -w" -o flipclock .
+cp flipclock ~/.local/bin/
+mkdir -p ~/.local/share/icons/hicolor/256x256/apps
+cp images/flipclock.png ~/.local/share/icons/hicolor/256x256/apps/flipclock.png
+cp flipclock.desktop ~/.local/share/applications/com.flipclock.app.desktop
+gtk-update-icon-cache ~/.local/share/icons/hicolor/
+update-desktop-database ~/.local/share/applications/
+```
+</details>
+
+<details>
+<summary>macOS (manual com fyne package)</summary>
+
+```bash
+go install fyne.io/tools/cmd/fyne@latest
+fyne package -os darwin -icon images/flipclock.png -name FlipClock -appID com.flipclock.app
+mv FlipClock.app /Applications/
+```
+</details>
+
+<details>
+<summary>Windows (manual com fyne package)</summary>
+
+```bash
+go install fyne.io/tools/cmd/fyne@latest
+fyne package -os windows -icon images/flipclock.png -name FlipClock -appID com.flipclock.app
+```
+</details>
 
 ## Roadmap
 
@@ -169,11 +224,11 @@ Para adicionar um icone ao system tray:
 - [x] Layout responsivo (proporcional ao tamanho da janela)
 - [x] Fullscreen (F/F11 + menu tray)
 - [x] Fonte customizada embutida (Bebas Neue)
+- [x] Icone personalizado no app, janela e tray
 - [ ] Toggle 12h/24h (via menu tray)
 - [ ] Always-on-top
 - [ ] Tema light mode
 - [ ] Configuracoes persistidas (JSON)
-- [ ] Icone personalizado no tray
 
 ## Como contribuir
 
