@@ -36,7 +36,6 @@ Thumbs.db
 
 # Build artifacts
 FlipClock.tar.xz
-*.tar.xz
-*.tar.gz
-*.zip
 build-dir/
+fyne-cross/
+release/
