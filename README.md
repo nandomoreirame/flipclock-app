@@ -2,12 +2,7 @@
 
 Widget desktop de flip clock minimalista, construido com Go e Fyne v2.
 
-```
-┌──────────┐   ┌──────────┐
-│    14    │   │    35    │
-└──────────┘   └──────────┘
-                        07
-```
+![FlipClock Screenshot](images/screenshot.png)
 
 ## Funcionalidades
 
