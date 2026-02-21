@@ -165,17 +165,20 @@ Para desinstalar:
 ### O que o install.sh faz por OS
 
 **Linux (Debian/Ubuntu/Fedora/Arch):**
+
 - Instala gcc e bibliotecas OpenGL (pede confirmacao antes de usar sudo)
 - Compila o binario otimizado
 - Instala em `~/.local/bin/flipclock`
 - Registra icone e .desktop entry no launcher
 
 **macOS:**
+
 - Verifica Xcode CLI tools
 - Compila e cria um .app bundle com Info.plist e icone .icns
 - Instala em `~/Applications/FlipClock.app`
 
 **Windows (MSYS2/Git Bash):**
+
 - Verifica gcc (TDM-GCC ou MSYS2)
 - Compila .exe sem janela de console
 - Instala em `%LOCALAPPDATA%\FlipClock\`
@@ -197,6 +200,7 @@ cp flipclock.desktop ~/.local/share/applications/com.flipclock.app.desktop
 gtk-update-icon-cache ~/.local/share/icons/hicolor/
 update-desktop-database ~/.local/share/applications/
 ```
+
 </details>
 
 <details>
@@ -207,6 +211,7 @@ go install fyne.io/tools/cmd/fyne@latest
 fyne package -os darwin -icon images/flipclock.png -name FlipClock -appID com.flipclock.app
 mv FlipClock.app /Applications/
 ```
+
 </details>
 
 <details>
@@ -216,6 +221,7 @@ mv FlipClock.app /Applications/
 go install fyne.io/tools/cmd/fyne@latest
 fyne package -os windows -icon images/flipclock.png -name FlipClock -appID com.flipclock.app
 ```
+
 </details>
 
 ## Roadmap
