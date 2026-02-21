@@ -2,5 +2,5 @@
   Icon = "images/flipclock.png"
   Name = "FlipClock"
   ID = "com.flipclock.app"
-  Version = "1.2.0"
+  Version = "1.2.1"
   Build = 7
