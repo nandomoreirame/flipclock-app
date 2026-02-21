@@ -9,11 +9,62 @@ Minimal desktop flip clock widget built with Go and Fyne v2.
 - Hour and minute flip cards with animation (300ms, ease-in-out, two phases)
 - Responsive layout that adapts to the window size
 - Fullscreen mode (`F` / `F11` keys)
+- **Multi-monitor support** - Screensaver mode covers all connected displays
 - System tray with menu (Show / Fullscreen / Quit)
 - Closing the window minimizes to tray (app keeps running)
 - Bebas Neue font embedded in the binary (zero external file dependencies)
 - Dark mode theme with minimalist palette
 - 24-hour format
+
+## Multi-Monitor Support
+
+FlipClock automatically detects and covers all connected monitors when running in screensaver mode.
+
+### Usage
+
+```bash
+# Launch screensaver on all monitors
+./flipclock --screensaver
+```
+
+### Behavior
+
+- **Automatic detection:** FlipClock queries your system for connected monitors at startup
+- **Synchronized time:** All windows display the same time, updated every second
+- **Unified exit:** Pressing any key closes all screensaver windows instantly
+
+### Platform Support
+
+| Platform | Status | Notes |
+|----------|--------|-------|
+| **Linux X11** | ✅ Full support | All monitors detected, correct positioning |
+| **Linux Wayland** | ⚠️ Partial | Monitors detected, but compositor controls window positioning |
+| **Windows** | ✅ Full support | All monitors supported |
+| **macOS** | ✅ Expected to work | (Not tested - community feedback welcome) |
+
+### Known Limitations
+
+- **Wayland positioning:** Window positions are controlled by the compositor, not the application. Windows will appear fullscreen but may not be in the expected monitor order.
+- **Hot-plug:** Monitors must be connected before starting screensaver. Hot-plugging monitors during execution is not supported.
+- **Preview mode:** Windows screensaver preview mode (small window in settings dialog) is not supported due to Fyne framework limitations.
+
+### Troubleshooting
+
+**Issue:** Only one window appears on multi-monitor setup
+
+**Solution:** Check console output for error messages. GLFW monitor detection may fail in headless environments or if OpenGL drivers are not properly installed. Try:
+
+```bash
+DISPLAY=:0 ./flipclock --screensaver
+```
+
+**Issue:** Windows appear on wrong monitors (Wayland only)
+
+**Expected behavior:** Wayland protocol doesn't allow applications to position windows. Use X11 for precise monitor control if needed.
+
+**Issue:** Screensaver doesn't exit on input
+
+**Solution:** Press any key directly. Mouse movement detection is not supported in Fyne v2.5.
 
 ## Stack
 
