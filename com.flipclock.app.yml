@@ -1,0 +1,34 @@
+app-id: com.flipclock.app
+runtime: org.freedesktop.Platform
+runtime-version: '24.08'
+sdk: org.freedesktop.Sdk
+sdk-extensions:
+  - org.freedesktop.Sdk.Extension.golang
+command: flipclock
+
+finish-args:
+  - --share=ipc
+  - --socket=x11
+  - --socket=wayland
+  - --device=dri
+  - --talk-name=org.freedesktop.Notifications
+  - --talk-name=org.kde.StatusNotifierWatcher
+
+build-options:
+  env:
+    - GOBIN=/app/bin
+    - GOROOT=/usr/lib/sdk/golang
+
+modules:
+  - name: flipclock
+    buildsystem: simple
+    build-commands:
+      - $GOROOT/bin/go build -mod=vendor -trimpath -ldflags "-s -w" -o flipclock .
+      - install -Dm00755 flipclock $FLATPAK_DEST/bin/flipclock
+      - install -Dm00644 com.flipclock.app.desktop $FLATPAK_DEST/share/applications/$FLATPAK_ID.desktop
+      - install -Dm00644 com.flipclock.app.metainfo.xml $FLATPAK_DEST/share/metainfo/$FLATPAK_ID.metainfo.xml
+      - install -Dm00644 images/flipclock.png $FLATPAK_DEST/share/icons/hicolor/256x256/apps/$FLATPAK_ID.png
+      - install -Dm00644 images/flipclock.svg $FLATPAK_DEST/share/icons/hicolor/scalable/apps/$FLATPAK_ID.svg
+    sources:
+      - type: dir
+        path: .

@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>com.flipclock.app</id>
+  <name>FlipClock</name>
+  <summary>Minimal desktop flip clock widget</summary>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT</project_license>
+
+  <developer id="com.github.nandomoreirame">
+    <name>Fernando Moreira</name>
+  </developer>
+
+  <description>
+    <p>
+      FlipClock is a minimal desktop flip clock widget with a dark mode theme,
+      smooth flip animation, responsive layout, fullscreen mode, and system tray integration.
+    </p>
+    <p>
+      Features include hour and minute flip cards with a two-phase animation,
+      keyboard shortcuts for fullscreen toggle, and a system tray menu for quick access.
+      The Bebas Neue font is embedded in the binary for zero external dependencies.
+    </p>
+  </description>
+
+  <launchable type="desktop-id">com.flipclock.app.desktop</launchable>
+
+  <screenshots>
+    <screenshot type="default">
+      <caption>FlipClock running in dark mode</caption>
+      <image>https://raw.githubusercontent.com/nandomoreirame/flipclock-app/develop/images/screenshot.png</image>
+    </screenshot>
+  </screenshots>
+
+  <url type="homepage">https://github.com/nandomoreirame/flipclock-app</url>
+  <url type="bugtracker">https://github.com/nandomoreirame/flipclock-app/issues</url>
+  <url type="vcs-browser">https://github.com/nandomoreirame/flipclock-app</url>
+
+  <content_rating type="oars-1.1" />
+
+  <branding>
+    <color type="primary" scheme_preference="dark">#1a1a1a</color>
+    <color type="primary" scheme_preference="light">#000000</color>
+  </branding>
+
+  <releases>
+    <release version="1.0.0" date="2026-02-20">
+      <description>
+        <p>Initial release.</p>
+        <ul>
+          <li>Hour and minute flip cards with two-phase animation (300ms, ease-in-out)</li>
+          <li>Responsive layout with 5:6 card aspect ratio</li>
+          <li>Fullscreen mode via F/F11 keys and tray menu</li>
+          <li>System tray integration with Show, Fullscreen, and Quit actions</li>
+          <li>Embedded Bebas Neue font (zero external file dependencies)</li>
+          <li>Dark mode theme with minimalist palette</li>
+          <li>24-hour format</li>
+        </ul>
+      </description>
+    </release>
+  </releases>
+
+  <supports>
+    <control>pointing</control>
+    <control>keyboard</control>
+  </supports>
+
+  <requires>
+    <display_length compare="ge">360</display_length>
+  </requires>
+</component>

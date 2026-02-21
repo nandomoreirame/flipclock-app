@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=FlipClock
+GenericName=Clock Widget
+Comment=Minimal desktop flip clock widget
+Exec=flipclock
+Icon=com.flipclock.app
+Categories=Utility;Clock;
+StartupWMClass=com.flipclock.app
+Terminal=false
+Keywords=clock;flip;time;widget;
