@@ -361,20 +361,20 @@ func main() {
 
 	// ── System Tray ──────────────────────────
 	//
-	// Linux GNOME puro: instale gnome-shell-extension-appindicator
-	// Ubuntu 22+ / KDE / macOS / Windows: funciona nativamente.
+	// Vanilla GNOME: install gnome-shell-extension-appindicator
+	// Ubuntu 22+ / KDE / macOS / Windows: works natively.
 
 	if desk, ok := a.(desktop.App); ok {
 		trayMenu := fyne.NewMenu("FlipClock",
-			fyne.NewMenuItem("Mostrar", func() {
+			fyne.NewMenuItem("Show", func() {
 				w.Show()
 				w.RequestFocus()
 			}),
-			fyne.NewMenuItem("Tela Cheia", func() {
+			fyne.NewMenuItem("Fullscreen", func() {
 				toggleFullscreen()
 			}),
 			fyne.NewMenuItemSeparator(),
-			fyne.NewMenuItem("Fechar", func() {
+			fyne.NewMenuItem("Quit", func() {
 				a.Quit()
 			}),
 		)
