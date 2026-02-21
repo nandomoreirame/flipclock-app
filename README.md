@@ -25,28 +25,63 @@ Minimal desktop flip clock widget built with Go and Fyne v2.
 | System Tray | [fyne.io/systray](https://github.com/nicoria/systray) |
 | Rendering | OpenGL (via go-gl) |
 
-## Prerequisites
+## Download
 
-- **Go 1.22+** ([download](https://go.dev/dl/))
-- **C/C++ compiler** and OpenGL libraries (required by Fyne):
+Pre-built binaries are available on the [Releases](https://github.com/nandomoreirame/flipclock-app/releases/latest) page.
 
-**Linux (Debian/Ubuntu):**
+| Platform | Architecture | File |
+|----------|-------------|------|
+| Linux (.deb) | x86_64 | `flipclock_X.X.X-1_amd64.deb` |
+| Linux (.deb) | ARM64 | `flipclock_X.X.X-1_arm64.deb` |
+| Linux (.zip) | x86_64 | `FlipClock-X.X.X-linux-amd64.zip` |
+| Linux (.zip) | ARM64 | `FlipClock-X.X.X-linux-arm64.zip` |
+| Windows (.zip) | x64 | `FlipClock-X.X.X-windows-amd64.zip` |
+
+## Installation
+
+### Debian/Ubuntu (.deb)
 
 ```bash
+# Download the .deb package from the releases page, then:
+sudo dpkg -i flipclock_X.X.X-1_amd64.deb
+
+# If there are missing dependencies:
+sudo apt-get install -f
+```
+
+### Linux (zip with Makefile)
+
+```bash
+# Download and extract the .zip from the releases page, then:
+unzip FlipClock-X.X.X-linux-amd64.zip
+sudo make install
+```
+
+To uninstall:
+
+```bash
+sudo make uninstall
+```
+
+### Windows
+
+1. Download `FlipClock-X.X.X-windows-amd64.zip` from the releases page
+2. Extract the zip file
+3. Run `FlipClock.exe`
+
+### Build from source
+
+Requires **Go 1.22+** and a **C/C++ compiler** with OpenGL libraries:
+
+```bash
+# Linux (Debian/Ubuntu)
 sudo apt install gcc libgl1-mesa-dev xorg-dev
-```
 
-**macOS:**
-
-```bash
+# macOS
 xcode-select --install
+
+# Windows: install TDM-GCC or MSYS2
 ```
-
-**Windows:**
-
-- [TDM-GCC](https://jmeubank.github.io/tdm-gcc/) or MSYS2
-
-## Installation and usage
 
 ```bash
 # Clone the repository
@@ -59,14 +94,8 @@ go mod tidy
 # Run directly
 go run .
 
-# Build binary
-go build -o flipclock .
-
-# Build optimized binary (smaller, no debug symbols)
+# Build optimized binary
 go build -ldflags "-s -w" -o flipclock .
-
-# Linux/macOS: run in background
-./flipclock &
 
 # Windows (no console window)
 go build -ldflags "-s -w -H windowsgui" -o flipclock.exe .
@@ -141,83 +170,15 @@ The animation uses `fyne.NewAnimation()` with a 300ms duration and ease-in-out c
 
 The flaps use the same color as the card (`#1A1A1A`), simulating the mechanical effect of a real flip clock.
 
-## System installation
+## Install from source
 
-The easiest way to install is using the automatic script:
+You can also install directly from source using the automatic script:
 
 ```bash
 ./install.sh
 ```
 
-The script detects the OS (Linux, macOS, Windows), installs required dependencies, compiles the optimized binary, and registers the app in the system launcher.
-
-To uninstall:
-
-```bash
-./install.sh --uninstall
-```
-
-### What install.sh does per OS
-
-**Linux (Debian/Ubuntu/Fedora/Arch):**
-
-- Installs gcc and OpenGL libraries (asks for confirmation before using sudo)
-- Compiles the optimized binary
-- Installs to `~/.local/bin/flipclock`
-- Registers icon and .desktop entry in the launcher
-
-**macOS:**
-
-- Checks for Xcode CLI tools
-- Compiles and creates a .app bundle with Info.plist and .icns icon
-- Installs to `~/Applications/FlipClock.app`
-
-**Windows (MSYS2/Git Bash):**
-
-- Checks for gcc (TDM-GCC or MSYS2)
-- Compiles .exe without console window
-- Installs to `%LOCALAPPDATA%\FlipClock\`
-- Creates Start Menu shortcut
-
-### Manual installation
-
-If you prefer to install manually, see the instructions per OS:
-
-<details>
-<summary>Linux (manual)</summary>
-
-```bash
-go build -ldflags "-s -w" -o flipclock .
-cp flipclock ~/.local/bin/
-mkdir -p ~/.local/share/icons/hicolor/256x256/apps
-cp images/flipclock.png ~/.local/share/icons/hicolor/256x256/apps/flipclock.png
-cp flipclock.desktop ~/.local/share/applications/com.flipclock.app.desktop
-gtk-update-icon-cache ~/.local/share/icons/hicolor/
-update-desktop-database ~/.local/share/applications/
-```
-
-</details>
-
-<details>
-<summary>macOS (manual with fyne package)</summary>
-
-```bash
-go install fyne.io/tools/cmd/fyne@latest
-fyne package -os darwin -icon images/flipclock.png -name FlipClock -appID com.flipclock.app
-mv FlipClock.app /Applications/
-```
-
-</details>
-
-<details>
-<summary>Windows (manual with fyne package)</summary>
-
-```bash
-go install fyne.io/tools/cmd/fyne@latest
-fyne package -os windows -icon images/flipclock.png -name FlipClock -appID com.flipclock.app
-```
-
-</details>
+The script detects the OS (Linux, macOS, Windows), installs required dependencies, compiles the optimized binary, and registers the app in the system launcher. Run `./install.sh --uninstall` to remove.
 
 ## Roadmap
 
