@@ -11,7 +11,7 @@ homepage: https://github.com/nandomoreirame/flipclock-app
 license: MIT
 
 depends:
-  - libgl1-mesa-glx
+  - libgl1
   - libxi6
   - libxcursor1
   - libxrandr2
