@@ -1,34 +1,34 @@
 # FlipClock
 
-Widget desktop de flip clock minimalista, construido com Go e Fyne v2.
+Minimal desktop flip clock widget built with Go and Fyne v2.
 
 ![FlipClock Screenshot](images/screenshot.png)
 
-## Funcionalidades
+## Features
 
-- Cards de hora e minuto com animacao flip (300ms, ease-in-out, duas fases)
-- Layout responsivo que se adapta ao tamanho da janela
-- Modo fullscreen (teclas `F` / `F11`)
-- System tray com menu (Mostrar / Tela Cheia / Fechar)
-- Fechar a janela minimiza para o tray (app continua rodando)
-- Fonte Bebas Neue embutida no binario (zero dependencia de arquivos externos)
-- Tema dark mode com paleta minimalista
-- Formato 24 horas
+- Hour and minute flip cards with animation (300ms, ease-in-out, two phases)
+- Responsive layout that adapts to the window size
+- Fullscreen mode (`F` / `F11` keys)
+- System tray with menu (Show / Fullscreen / Quit)
+- Closing the window minimizes to tray (app keeps running)
+- Bebas Neue font embedded in the binary (zero external file dependencies)
+- Dark mode theme with minimalist palette
+- 24-hour format
 
 ## Stack
 
-| Componente | Tecnologia |
-|------------|-----------|
-| Linguagem | [Go](https://go.dev/) 1.22+ |
+| Component | Technology |
+|-----------|-----------|
+| Language | [Go](https://go.dev/) 1.22+ |
 | GUI | [Fyne](https://fyne.io/) v2.5.1 |
-| Fonte | [Bebas Neue](https://fonts.google.com/specimen/Bebas+Neue) (OFL) |
+| Font | [Bebas Neue](https://fonts.google.com/specimen/Bebas+Neue) (OFL) |
 | System Tray | [fyne.io/systray](https://github.com/nicoria/systray) |
 | Rendering | OpenGL (via go-gl) |
 
-## Pre-requisitos
+## Prerequisites
 
 - **Go 1.22+** ([download](https://go.dev/dl/))
-- **Compilador C/C++** e bibliotecas OpenGL (necessarios pelo Fyne):
+- **C/C++ compiler** and OpenGL libraries (required by Fyne):
 
 **Linux (Debian/Ubuntu):**
 
@@ -44,144 +44,144 @@ xcode-select --install
 
 **Windows:**
 
-- [TDM-GCC](https://jmeubank.github.io/tdm-gcc/) ou MSYS2
+- [TDM-GCC](https://jmeubank.github.io/tdm-gcc/) or MSYS2
 
-## Instalacao e execucao
+## Installation and usage
 
 ```bash
-# Clonar o repositorio
+# Clone the repository
 git clone https://github.com/nandomoreirame/flipclock-app.git
 cd flipclock-app
 
-# Baixar dependencias
+# Download dependencies
 go mod tidy
 
-# Rodar direto
+# Run directly
 go run .
 
-# Compilar binario
+# Build binary
 go build -o flipclock .
 
-# Compilar binario otimizado (menor, sem simbolos de debug)
+# Build optimized binary (smaller, no debug symbols)
 go build -ldflags "-s -w" -o flipclock .
 
-# Linux/macOS: rodar em background
+# Linux/macOS: run in background
 ./flipclock &
 
-# Windows (sem janela de console)
+# Windows (no console window)
 go build -ldflags "-s -w -H windowsgui" -o flipclock.exe .
 ```
 
-## Atalhos de teclado
+## Keyboard shortcuts
 
-| Tecla | Acao |
-|-------|------|
-| `Esc` | Sai do fullscreen, ou minimiza para tray |
-| `Q` | Minimiza para tray |
-| `F` ou `F11` | Alterna fullscreen |
+| Key | Action |
+|-----|--------|
+| `Esc` | Exit fullscreen, or minimize to tray |
+| `Q` | Minimize to tray |
+| `F` or `F11` | Toggle fullscreen |
 
-## Menu do System Tray
+## System Tray menu
 
-| Item | Acao |
-|------|------|
-| Mostrar | Exibe e foca a janela |
-| Tela Cheia | Alterna fullscreen |
-| Fechar | Encerra o aplicativo |
+| Item | Action |
+|------|--------|
+| Show | Display and focus the window |
+| Fullscreen | Toggle fullscreen |
+| Quit | Close the application |
 
-### Tray no Linux (GNOME)
+### Tray on Linux (GNOME)
 
-O GNOME puro nao exibe tray icons nativamente. Instale a extensao AppIndicator:
+Vanilla GNOME does not display tray icons natively. Install the AppIndicator extension:
 
 ```bash
 sudo apt install gnome-shell-extension-appindicator
-# Reinicie a sessao ou o GNOME Shell
+# Restart the session or GNOME Shell
 ```
 
-KDE, XFCE, macOS e Windows funcionam out-of-the-box.
+KDE, XFCE, macOS and Windows work out-of-the-box.
 
-## Estrutura do projeto
+## Project structure
 
 ```
 flipclock-app/
-├── main.go                      # Aplicacao (widgets, layout, tray, loop)
-├── font.go                      # Fonte embutida via go:embed
-├── bundled.go                   # Icone embutido via fyne bundle
+├── main.go                      # Application (widgets, layout, tray, loop)
+├── font.go                      # Embedded font via go:embed
+├── bundled.go                   # Embedded icon via fyne bundle
 ├── fonts/
-│   └── BebasNeue-Regular.ttf    # Fonte display (61KB, OFL license)
+│   └── BebasNeue-Regular.ttf    # Display font (61KB, OFL license)
 ├── images/
-│   ├── flipclock.png            # Icone do app (256x256)
-│   ├── flipclock@2x.png         # Icone retina (512x512)
-│   └── flipclock.svg            # Icone vetorial
-├── install.sh                   # Installer automatico (Linux/macOS/Windows)
-├── flipclock.desktop            # Desktop entry para Linux
-├── FyneApp.toml                 # Metadados do app para fyne package
-├── go.mod                       # Definicao do modulo Go
-├── go.sum                       # Checksums das dependencias
-├── CLAUDE.md                    # Instrucoes para o Claude Code
-└── README.md                    # Este arquivo
+│   ├── flipclock.png            # App icon (256x256)
+│   ├── flipclock@2x.png         # Retina icon (512x512)
+│   └── flipclock.svg            # Vector icon
+├── install.sh                   # Automatic installer (Linux/macOS/Windows)
+├── flipclock.desktop            # Desktop entry for Linux
+├── FyneApp.toml                 # App metadata for fyne package
+├── go.mod                       # Go module definition
+├── go.sum                       # Dependency checksums
+├── CLAUDE.md                    # Claude Code instructions
+└── README.md                    # This file
 ```
 
-### Secoes do main.go
+### main.go sections
 
-| Secao | Linhas | Descricao |
-|-------|--------|-----------|
-| Colors | 16-26 | Paleta dark mode (`#000`, `#1A1A1A`, `#FFF`, `#555`) |
-| flipTheme | 28-57 | Tema customizado do Fyne (cores + fonte BebasNeue) |
-| FlipCard | 59-200 | Widget customizado com renderer e animacao flip |
-| clockLayout | 202-265 | Layout responsivo com proporcao 5:6 dos cards |
-| Clock | 267-290 | Estado do relogio + metodo `Update()` + helper `pad2` |
-| main() | 292-402 | Setup do app, tray, atalhos, ticker loop de 1 segundo |
+| Section | Lines | Description |
+|---------|-------|-------------|
+| Colors | 16-26 | Dark mode palette (`#000`, `#1A1A1A`, `#FFF`, `#555`) |
+| flipTheme | 28-57 | Custom Fyne theme (colors + BebasNeue font) |
+| FlipCard | 59-200 | Custom widget with renderer and flip animation |
+| clockLayout | 202-265 | Responsive layout with 5:6 card aspect ratio |
+| Clock | 267-290 | Clock state + `Update()` method + `pad2` helper |
+| main() | 292-402 | App setup, tray, shortcuts, 1-second ticker loop |
 
-## Animacao flip
+## Flip animation
 
-A animacao usa `fyne.NewAnimation()` com duracao de 300ms e curva ease-in-out, dividida em duas fases:
+The animation uses `fyne.NewAnimation()` with a 300ms duration and ease-in-out curve, split into two phases:
 
-1. **Fase 1 (0-50%):** A aba superior encolhe do topo em direcao a dobradura central, revelando o novo digito por cima
-2. **Fase 2 (50-100%):** A aba inferior encolhe de baixo em direcao a dobradura, revelando o novo digito por baixo
+1. **Phase 1 (0-50%):** The top flap shrinks from the top toward the central hinge, revealing the new digit above
+2. **Phase 2 (50-100%):** The bottom flap shrinks from the bottom toward the hinge, revealing the new digit below
 
-As abas usam a mesma cor do card (`#1A1A1A`), simulando o efeito mecanico de um flip clock real.
+The flaps use the same color as the card (`#1A1A1A`), simulating the mechanical effect of a real flip clock.
 
-## Instalacao no sistema
+## System installation
 
-O jeito mais facil de instalar e usar o script automatico:
+The easiest way to install is using the automatic script:
 
 ```bash
 ./install.sh
 ```
 
-O script detecta o OS (Linux, macOS, Windows), instala dependencias necessarias, compila o binario otimizado e registra o app no launcher do sistema.
+The script detects the OS (Linux, macOS, Windows), installs required dependencies, compiles the optimized binary, and registers the app in the system launcher.
 
-Para desinstalar:
+To uninstall:
 
 ```bash
 ./install.sh --uninstall
 ```
 
-### O que o install.sh faz por OS
+### What install.sh does per OS
 
 **Linux (Debian/Ubuntu/Fedora/Arch):**
 
-- Instala gcc e bibliotecas OpenGL (pede confirmacao antes de usar sudo)
-- Compila o binario otimizado
-- Instala em `~/.local/bin/flipclock`
-- Registra icone e .desktop entry no launcher
+- Installs gcc and OpenGL libraries (asks for confirmation before using sudo)
+- Compiles the optimized binary
+- Installs to `~/.local/bin/flipclock`
+- Registers icon and .desktop entry in the launcher
 
 **macOS:**
 
-- Verifica Xcode CLI tools
-- Compila e cria um .app bundle com Info.plist e icone .icns
-- Instala em `~/Applications/FlipClock.app`
+- Checks for Xcode CLI tools
+- Compiles and creates a .app bundle with Info.plist and .icns icon
+- Installs to `~/Applications/FlipClock.app`
 
 **Windows (MSYS2/Git Bash):**
 
-- Verifica gcc (TDM-GCC ou MSYS2)
-- Compila .exe sem janela de console
-- Instala em `%LOCALAPPDATA%\FlipClock\`
-- Cria atalho no menu iniciar
+- Checks for gcc (TDM-GCC or MSYS2)
+- Compiles .exe without console window
+- Installs to `%LOCALAPPDATA%\FlipClock\`
+- Creates Start Menu shortcut
 
-### Instalacao manual
+### Manual installation
 
-Se preferir instalar manualmente, veja as instrucoes por OS:
+If you prefer to install manually, see the instructions per OS:
 
 <details>
 <summary>Linux (manual)</summary>
@@ -199,7 +199,7 @@ update-desktop-database ~/.local/share/applications/
 </details>
 
 <details>
-<summary>macOS (manual com fyne package)</summary>
+<summary>macOS (manual with fyne package)</summary>
 
 ```bash
 go install fyne.io/tools/cmd/fyne@latest
@@ -210,7 +210,7 @@ mv FlipClock.app /Applications/
 </details>
 
 <details>
-<summary>Windows (manual com fyne package)</summary>
+<summary>Windows (manual with fyne package)</summary>
 
 ```bash
 go install fyne.io/tools/cmd/fyne@latest
@@ -221,35 +221,35 @@ fyne package -os windows -icon images/flipclock.png -name FlipClock -appID com.f
 
 ## Roadmap
 
-- [x] Animacao flip (duas fases, 300ms ease-in-out)
-- [x] Layout responsivo (proporcional ao tamanho da janela)
-- [x] Fullscreen (F/F11 + menu tray)
-- [x] Fonte customizada embutida (Bebas Neue)
-- [x] Icone personalizado no app, janela e tray
-- [ ] Toggle 12h/24h (via menu tray)
+- [x] Flip animation (two-phase, 300ms ease-in-out)
+- [x] Responsive layout (proportional to window size)
+- [x] Fullscreen (F/F11 + tray menu)
+- [x] Embedded custom font (Bebas Neue)
+- [x] Custom icon for app, window, and tray
+- [ ] 12h/24h toggle (via tray menu)
 - [ ] Always-on-top
-- [ ] Tema light mode
-- [ ] Configuracoes persistidas (JSON)
+- [ ] Light theme
+- [ ] Persistent settings (JSON)
 
-## Como contribuir
+## Contributing
 
-1. Fork o repositorio
-2. Crie uma branch para sua feature (`git checkout -b feature/minha-feature`)
-3. Faca commit das mudancas (`git commit -m "feat: descricao da feature"`)
-4. Push para a branch (`git push origin feature/minha-feature`)
-5. Abra um Pull Request
+1. Fork the repository
+2. Create a branch for your feature (`git checkout -b feature/my-feature`)
+3. Commit your changes (`git commit -m "feat: feature description"`)
+4. Push to the branch (`git push origin feature/my-feature`)
+5. Open a Pull Request
 
-### Convencoes
+### Conventions
 
-- Commits seguem [Conventional Commits](https://www.conventionalcommits.org/)
-- Codigo, variaveis e comentarios em ingles
-- Testes com `go test ./...`
+- Commits follow [Conventional Commits](https://www.conventionalcommits.org/)
+- Code, variables, and comments in English
+- Tests with `go test ./...`
 
-## Creditos
+## Credits
 
-- **Fonte:** [Bebas Neue](https://fonts.google.com/specimen/Bebas+Neue) por Ryoichi Tsunekawa (SIL Open Font License)
-- **GUI:** [Fyne](https://fyne.io/) toolkit para Go
+- **Font:** [Bebas Neue](https://fonts.google.com/specimen/Bebas+Neue) by Ryoichi Tsunekawa (SIL Open Font License)
+- **GUI:** [Fyne](https://fyne.io/) toolkit for Go
 
-## Licenca
+## License
 
 MIT

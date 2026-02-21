@@ -97,9 +97,9 @@ Embeds the BebasNeue-Regular.ttf font into the binary using `go:embed`. Exports 
 
 | Item | Action |
 |------|--------|
-| Mostrar | Show and focus window |
-| Tela Cheia | Toggle fullscreen |
-| Fechar | Quit application |
+| Show | Show and focus window |
+| Fullscreen | Toggle fullscreen |
+| Quit | Quit application |
 
 ## Roadmap
 
