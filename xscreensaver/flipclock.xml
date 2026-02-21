@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<screensaver name="flipclock" _label="FlipClock"
+             _description="Minimalist flip clock screensaver with dark theme and flip animation"
+             gl="no">
+  <command arg="--screensaver"/>
+  <video href="https://github.com/nandomoreirame/flip-clock-app"/>
+  <hgroup>
+    <vgroup>
+      <string id="description" _label="A minimal flip clock widget with 24h format, flip card animation, and dark mode."/>
+    </vgroup>
+  </hgroup>
+  <_description>
+FlipClock displays a beautiful flip clock with large hour and minute cards in 24-hour format. Features smooth flip animation and a minimal dark theme.
+
+Written by nandomoreira.
+  </_description>
+</screensaver>
