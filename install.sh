@@ -3,72 +3,84 @@ set -euo pipefail
 
 # ─────────────────────────────────────────────
 # FlipClock Installer
-# Detects OS, installs dependencies, compiles
-# and installs the app in the system launcher.
+# Detects OS and distro, installs dependencies,
+# compiles and installs the app per platform.
 # ─────────────────────────────────────────────
 
 APP_NAME="FlipClock"
 APP_ID="com.flipclock.app"
 BIN_NAME="flipclock"
-VERSION="1.0.0"
+VERSION="0.1.0"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ICON_SOURCE="$SCRIPT_DIR/images/flipclock.png"
+ICON_SVG_SOURCE="$SCRIPT_DIR/images/flipclock.svg"
 
 # ─── Colors ──────────────────────────────────
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
+CYAN='\033[0;36m'
 BOLD='\033[1m'
 NC='\033[0m'
 
-info()  { echo -e "${BLUE}[INFO]${NC} $*"; }
-ok()    { echo -e "${GREEN}[OK]${NC} $*"; }
-warn()  { echo -e "${YELLOW}[WARN]${NC} $*"; }
-error() { echo -e "${RED}[ERROR]${NC} $*" >&2; }
+info()  { echo -e "${CYAN}[info]${NC}  $*"; }
+ok()    { echo -e "${GREEN}[ok]${NC}    $*"; }
+warn()  { echo -e "${YELLOW}[warn]${NC}  $*"; }
+error() { echo -e "${RED}[error]${NC} $*" >&2; }
 step()  { echo -e "\n${BOLD}>>> $*${NC}"; }
 
-# ─── OS Detection ────────────────────────────
+# ─── Platform Detection ─────────────────────
 
-detect_os() {
-    case "$(uname -s)" in
-        Linux*)  OS="linux" ;;
-        Darwin*) OS="darwin" ;;
-        MINGW*|MSYS*|CYGWIN*) OS="windows" ;;
+PLATFORM=""
+ARCH=""
+
+detect_platform() {
+    local kernel arch
+    kernel="$(uname -s)"
+    arch="$(uname -m)"
+
+    case "$kernel" in
+        Darwin)
+            PLATFORM="macos"
+            if [[ "$arch" == "arm64" ]]; then
+                ARCH="arm64"
+            else
+                ARCH="x64"
+            fi
+            ;;
+        Linux)
+            if [ -f /etc/os-release ]; then
+                # shellcheck disable=SC1091
+                . /etc/os-release
+                DISTRO_ID="${ID:-unknown}"
+                DISTRO_ID_LIKE="${ID_LIKE:-}"
+            else
+                DISTRO_ID="unknown"
+                DISTRO_ID_LIKE=""
+            fi
+
+            if [[ "$DISTRO_ID" == "debian" || "$DISTRO_ID" == "ubuntu" || \
+                  "$DISTRO_ID" == "pop" || "$DISTRO_ID" == "linuxmint" || \
+                  "$DISTRO_ID_LIKE" == *"debian"* || "$DISTRO_ID_LIKE" == *"ubuntu"* ]]; then
+                PLATFORM="debian"
+            else
+                PLATFORM="linux"
+            fi
+            ARCH="x64"
+            ;;
+        MINGW*|MSYS*|CYGWIN*)
+            PLATFORM="windows"
+            ARCH="x64"
+            ;;
         *)
-            error "OS not supported: $(uname -s)"
+            error "Unsupported OS: $kernel"
             exit 1
             ;;
     esac
-}
 
-detect_linux_distro() {
-    if [ -f /etc/os-release ]; then
-        # shellcheck disable=SC1091
-        . /etc/os-release
-        DISTRO_ID="${ID:-unknown}"
-        DISTRO_ID_LIKE="${ID_LIKE:-}"
-    else
-        DISTRO_ID="unknown"
-        DISTRO_ID_LIKE=""
-    fi
-}
-
-is_debian_based() {
-    [[ "$DISTRO_ID" == "debian" || "$DISTRO_ID" == "ubuntu" || \
-       "$DISTRO_ID" == "pop" || "$DISTRO_ID" == "linuxmint" || \
-       "$DISTRO_ID_LIKE" == *"debian"* || "$DISTRO_ID_LIKE" == *"ubuntu"* ]]
-}
-
-is_fedora_based() {
-    [[ "$DISTRO_ID" == "fedora" || "$DISTRO_ID" == "rhel" || \
-       "$DISTRO_ID" == "centos" || "$DISTRO_ID_LIKE" == *"fedora"* ]]
-}
-
-is_arch_based() {
-    [[ "$DISTRO_ID" == "arch" || "$DISTRO_ID" == "manjaro" || \
-       "$DISTRO_ID" == "endeavouros" || "$DISTRO_ID_LIKE" == *"arch"* ]]
+    info "Detected platform: ${PLATFORM} (${ARCH})"
 }
 
 # ─── Dependency Checks ──────────────────────
@@ -103,88 +115,84 @@ check_gcc() {
 
 # ─── Install System Dependencies ─────────────
 
-install_deps_linux() {
-    detect_linux_distro
-
-    if check_gcc; then
-        info "Build dependencies appear to be installed already."
-        return 0
-    fi
-
-    step "Installing build dependencies"
-
-    if is_debian_based; then
-        info "Detected Debian/Ubuntu-based distro ($DISTRO_ID)"
-        echo -e "${YELLOW}The following command requires sudo:${NC}"
-        echo "  sudo apt install -y gcc libgl1-mesa-dev xorg-dev"
-        read -rp "Proceed? [Y/n] " confirm
-        if [[ "${confirm:-Y}" =~ ^[Yy]?$ ]]; then
-            sudo apt update -qq
-            sudo apt install -y gcc libgl1-mesa-dev xorg-dev
-        else
-            warn "Skipped. You may need to install dependencies manually."
-            return 0
-        fi
-
-    elif is_fedora_based; then
-        info "Detected Fedora/RHEL-based distro ($DISTRO_ID)"
-        echo -e "${YELLOW}The following command requires sudo:${NC}"
-        echo "  sudo dnf install -y gcc mesa-libGL-devel libXcursor-devel libXrandr-devel libXinerama-devel libXi-devel libXxf86vm-devel"
-        read -rp "Proceed? [Y/n] " confirm
-        if [[ "${confirm:-Y}" =~ ^[Yy]?$ ]]; then
-            sudo dnf install -y gcc mesa-libGL-devel libXcursor-devel \
-                libXrandr-devel libXinerama-devel libXi-devel libXxf86vm-devel
-        else
-            warn "Skipped. You may need to install dependencies manually."
-            return 0
-        fi
-
-    elif is_arch_based; then
-        info "Detected Arch-based distro ($DISTRO_ID)"
-        echo -e "${YELLOW}The following command requires sudo:${NC}"
-        echo "  sudo pacman -S --needed gcc mesa libxcursor libxrandr libxinerama libxi"
-        read -rp "Proceed? [Y/n] " confirm
-        if [[ "${confirm:-Y}" =~ ^[Yy]?$ ]]; then
-            sudo pacman -S --needed --noconfirm gcc mesa libxcursor \
-                libxrandr libxinerama libxi
-        else
-            warn "Skipped. You may need to install dependencies manually."
-            return 0
-        fi
-
-    else
-        warn "Unknown distro ($DISTRO_ID). Install gcc and OpenGL dev libraries manually."
-        warn "Fyne requires: gcc, OpenGL headers, X11 dev headers."
-        return 0
-    fi
-
-    ok "Build dependencies installed"
-}
-
-install_deps_darwin() {
-    if xcode-select -p &>/dev/null; then
-        ok "Xcode CLI tools detected"
-    else
-        step "Installing Xcode Command Line Tools"
-        info "A system dialog will appear. Click 'Install' and wait."
-        xcode-select --install 2>/dev/null || true
-        warn "Run this script again after Xcode CLI tools finish installing."
-        exit 0
-    fi
-}
-
-install_deps_windows() {
-    if check_gcc; then
-        return 0
-    fi
-
-    warn "A C compiler (gcc) is required but was not found."
-    warn "Install one of the following:"
-    echo "  - TDM-GCC: https://jmeubank.github.io/tdm-gcc/"
-    echo "  - MSYS2:   https://www.msys2.org/ (then: pacman -S mingw-w64-x86_64-gcc)"
-    echo ""
-    warn "After installing, restart your terminal and run this script again."
-    exit 1
+install_deps() {
+    case "$PLATFORM" in
+        debian)
+            if check_gcc; then
+                info "Build dependencies appear to be installed already."
+                return 0
+            fi
+            step "Installing build dependencies"
+            info "Detected Debian/Ubuntu-based distro ($DISTRO_ID)"
+            echo -e "${YELLOW}The following command requires sudo:${NC}"
+            echo "  sudo apt install -y gcc libgl1-mesa-dev xorg-dev"
+            read -rp "Proceed? [Y/n] " confirm
+            if [[ "${confirm:-Y}" =~ ^[Yy]?$ ]]; then
+                sudo apt update -qq
+                sudo apt install -y gcc libgl1-mesa-dev xorg-dev
+            else
+                warn "Skipped. You may need to install dependencies manually."
+            fi
+            ;;
+        linux)
+            if check_gcc; then
+                info "Build dependencies appear to be installed already."
+                return 0
+            fi
+            step "Installing build dependencies"
+            if [[ "${DISTRO_ID:-}" == "fedora" || "${DISTRO_ID:-}" == "rhel" || \
+                  "${DISTRO_ID:-}" == "centos" || "${DISTRO_ID_LIKE:-}" == *"fedora"* ]]; then
+                info "Detected Fedora/RHEL-based distro ($DISTRO_ID)"
+                echo -e "${YELLOW}The following command requires sudo:${NC}"
+                echo "  sudo dnf install -y gcc mesa-libGL-devel libXcursor-devel libXrandr-devel libXinerama-devel libXi-devel libXxf86vm-devel"
+                read -rp "Proceed? [Y/n] " confirm
+                if [[ "${confirm:-Y}" =~ ^[Yy]?$ ]]; then
+                    sudo dnf install -y gcc mesa-libGL-devel libXcursor-devel \
+                        libXrandr-devel libXinerama-devel libXi-devel libXxf86vm-devel
+                else
+                    warn "Skipped."
+                fi
+            elif [[ "${DISTRO_ID:-}" == "arch" || "${DISTRO_ID:-}" == "manjaro" || \
+                    "${DISTRO_ID:-}" == "endeavouros" || "${DISTRO_ID_LIKE:-}" == *"arch"* ]]; then
+                info "Detected Arch-based distro ($DISTRO_ID)"
+                echo -e "${YELLOW}The following command requires sudo:${NC}"
+                echo "  sudo pacman -S --needed gcc mesa libxcursor libxrandr libxinerama libxi"
+                read -rp "Proceed? [Y/n] " confirm
+                if [[ "${confirm:-Y}" =~ ^[Yy]?$ ]]; then
+                    sudo pacman -S --needed --noconfirm gcc mesa libxcursor \
+                        libxrandr libxinerama libxi
+                else
+                    warn "Skipped."
+                fi
+            else
+                warn "Unknown distro (${DISTRO_ID:-unknown}). Install gcc and OpenGL dev libraries manually."
+                warn "Fyne requires: gcc, OpenGL headers, X11 dev headers."
+            fi
+            ;;
+        macos)
+            if xcode-select -p &>/dev/null; then
+                ok "Xcode CLI tools detected"
+            else
+                step "Installing Xcode Command Line Tools"
+                info "A system dialog will appear. Click 'Install' and wait."
+                xcode-select --install 2>/dev/null || true
+                warn "Run this script again after Xcode CLI tools finish installing."
+                exit 0
+            fi
+            ;;
+        windows)
+            if check_gcc; then
+                return 0
+            fi
+            warn "A C compiler (gcc) is required but was not found."
+            warn "Install one of the following:"
+            echo "  - TDM-GCC: https://jmeubank.github.io/tdm-gcc/"
+            echo "  - MSYS2:   https://www.msys2.org/ (then: pacman -S mingw-w64-x86_64-gcc)"
+            echo ""
+            warn "After installing, restart your terminal and run this script again."
+            exit 1
+            ;;
+    esac
 }
 
 # ─── Build ───────────────────────────────────
@@ -200,7 +208,7 @@ build() {
     local ldflags="-s -w"
     local output="$BIN_NAME"
 
-    if [[ "$OS" == "windows" ]]; then
+    if [[ "$PLATFORM" == "windows" ]]; then
         ldflags="-s -w -H windowsgui"
         output="${BIN_NAME}.exe"
     fi
@@ -211,15 +219,50 @@ build() {
     ok "Built: $output ($(du -h "$output" | cut -f1))"
 }
 
-# ─── Install (Linux) ────────────────────────
+# ─── Kill running processes ──────────────────
 
-install_linux() {
-    step "Installing on Linux"
+kill_running() {
+    local pids
+    # Use -x for exact binary name match (not substring of paths like install.sh)
+    pids=$(pgrep -x "$BIN_NAME" 2>/dev/null || true)
+
+    if [[ -z "$pids" ]]; then
+        return
+    fi
+
+    warn "Running $APP_NAME process(es) detected: $pids"
+    info "Stopping them before install..."
+
+    for pid in $pids; do
+        kill "$pid" 2>/dev/null || true
+    done
+
+    local waited=0
+    while pgrep -x "$BIN_NAME" &>/dev/null && [[ $waited -lt 5 ]]; do
+        sleep 1
+        waited=$((waited + 1))
+    done
+
+    for pid in $pids; do
+        if kill -0 "$pid" 2>/dev/null; then
+            kill -9 "$pid" 2>/dev/null || true
+            warn "Force-killed PID $pid"
+        fi
+    done
+
+    ok "$APP_NAME processes stopped"
+}
+
+# ─── Install: Debian (.deb-like) ─────────────
+
+install_debian() {
+    step "Installing on Debian/Ubuntu"
 
     local bin_dir="$HOME/.local/bin"
-    local icon_dir="$HOME/.local/share/icons/hicolor/256x256/apps"
+    local icon_dir="$HOME/.local/share/icons"
     local desktop_dir="$HOME/.local/share/applications"
     local bin_path="$bin_dir/$BIN_NAME"
+    local icon_path="$icon_dir/${APP_ID}.png"
 
     mkdir -p "$bin_dir" "$icon_dir" "$desktop_dir"
 
@@ -228,29 +271,27 @@ install_linux() {
     chmod +x "$bin_path"
     ok "Binary installed: $bin_path"
 
-    # Icon
-    cp "$SCRIPT_DIR/images/flipclock.png" "$icon_dir/flipclock.png"
-    cp "$SCRIPT_DIR/images/flipclock.png" "$icon_dir/${APP_ID}.png"
-    ok "Icon installed: $icon_dir/flipclock.png"
+    # Icon (single PNG in icons dir - absolute path in .desktop)
+    cp "$ICON_SOURCE" "$icon_path"
+    ok "Icon installed: $icon_path"
 
-    # Desktop entry (with absolute Exec path)
-    cat > "$desktop_dir/${APP_ID}.desktop" <<EOF
+    # Desktop entry (absolute icon path for reliable resolution)
+    cat > "$desktop_dir/${APP_ID}.desktop" << EOF
 [Desktop Entry]
 Type=Application
 Name=$APP_NAME
-Comment=Minimal flip clock desktop widget
+GenericName=Clock Widget
+Comment=Minimal desktop flip clock widget
 Exec=$bin_path
-Icon=flipclock
+Icon=$icon_path
 Categories=Utility;Clock;
 StartupWMClass=$APP_ID
 Terminal=false
+Keywords=clock;flip;time;widget;
 EOF
     ok "Desktop entry installed: $desktop_dir/${APP_ID}.desktop"
 
-    # Update caches
-    gtk-update-icon-cache "$HOME/.local/share/icons/hicolor/" 2>/dev/null || true
     update-desktop-database "$desktop_dir" 2>/dev/null || true
-    ok "Icon and desktop caches updated"
 
     # Check PATH
     if [[ ":$PATH:" != *":$bin_dir:"* ]]; then
@@ -260,9 +301,63 @@ EOF
     fi
 }
 
-# ─── Install (macOS) ─────────────────────────
+# ─── Install: Generic Linux (AppImage-style) ─
 
-install_darwin() {
+install_linux_generic() {
+    step "Installing on Linux (${DISTRO_ID:-generic})"
+
+    local install_dir="$HOME/.local/opt/$BIN_NAME"
+    local bin_link="$HOME/.local/bin/$BIN_NAME"
+    local icon_dir="$HOME/.local/share/icons"
+    local desktop_dir="$HOME/.local/share/applications"
+    local icon_path="$icon_dir/${APP_ID}.png"
+
+    mkdir -p "$install_dir" "$HOME/.local/bin" "$icon_dir" "$desktop_dir"
+
+    # Binary to opt dir
+    cp "$SCRIPT_DIR/$BIN_NAME" "$install_dir/$BIN_NAME"
+    chmod +x "$install_dir/$BIN_NAME"
+    ok "Binary installed: $install_dir/$BIN_NAME"
+
+    # Symlink
+    ln -sf "$install_dir/$BIN_NAME" "$bin_link"
+    ok "Symlink created: $bin_link -> $install_dir/$BIN_NAME"
+
+    # Icon (absolute path in .desktop for reliable resolution)
+    cp "$ICON_SOURCE" "$icon_path"
+    ok "Icon installed: $icon_path"
+
+    # Desktop entry with absolute paths
+    cat > "$desktop_dir/${APP_ID}.desktop" << EOF
+[Desktop Entry]
+Type=Application
+Version=${VERSION}
+Name=$APP_NAME
+GenericName=Clock Widget
+Comment=Minimal desktop flip clock widget
+Exec=${install_dir}/${BIN_NAME}
+Icon=${icon_path}
+Categories=Utility;Clock;
+StartupWMClass=$APP_ID
+Terminal=false
+Keywords=clock;flip;time;widget;
+StartupNotify=true
+EOF
+    ok "Desktop entry installed: $desktop_dir/${APP_ID}.desktop"
+
+    update-desktop-database "$desktop_dir" 2>/dev/null || true
+
+    # Check PATH
+    if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
+        warn "$HOME/.local/bin is not in your PATH."
+        warn "Add this to your shell config (~/.bashrc or ~/.zshrc):"
+        echo "  export PATH=\"\$HOME/.local/bin:\$PATH\""
+    fi
+}
+
+# ─── Install: macOS (.app bundle) ────────────
+
+install_macos() {
     step "Installing on macOS"
 
     local app_dir="$HOME/Applications"
@@ -277,37 +372,32 @@ install_darwin() {
     ok "Binary installed: $app_bundle/Contents/MacOS/$BIN_NAME"
 
     # Icon (convert PNG to ICNS if sips is available)
+    local icon_file="flipclock.png"
     if command -v sips &>/dev/null && command -v iconutil &>/dev/null; then
         local iconset_dir
         iconset_dir="$(mktemp -d)/flipclock.iconset"
         mkdir -p "$iconset_dir"
 
-        sips -z 16 16     "$SCRIPT_DIR/images/flipclock.png" --out "$iconset_dir/icon_16x16.png"    &>/dev/null
-        sips -z 32 32     "$SCRIPT_DIR/images/flipclock.png" --out "$iconset_dir/icon_16x16@2x.png" &>/dev/null
-        sips -z 32 32     "$SCRIPT_DIR/images/flipclock.png" --out "$iconset_dir/icon_32x32.png"    &>/dev/null
-        sips -z 64 64     "$SCRIPT_DIR/images/flipclock.png" --out "$iconset_dir/icon_32x32@2x.png" &>/dev/null
-        sips -z 128 128   "$SCRIPT_DIR/images/flipclock.png" --out "$iconset_dir/icon_128x128.png"  &>/dev/null
-        sips -z 256 256   "$SCRIPT_DIR/images/flipclock.png" --out "$iconset_dir/icon_128x128@2x.png" &>/dev/null
-        sips -z 256 256   "$SCRIPT_DIR/images/flipclock.png" --out "$iconset_dir/icon_256x256.png"  &>/dev/null
-        sips -z 512 512   "$SCRIPT_DIR/images/flipclock.png" --out "$iconset_dir/icon_256x256@2x.png" &>/dev/null
+        sips -z 16 16     "$ICON_SOURCE" --out "$iconset_dir/icon_16x16.png"       &>/dev/null
+        sips -z 32 32     "$ICON_SOURCE" --out "$iconset_dir/icon_16x16@2x.png"    &>/dev/null
+        sips -z 32 32     "$ICON_SOURCE" --out "$iconset_dir/icon_32x32.png"       &>/dev/null
+        sips -z 64 64     "$ICON_SOURCE" --out "$iconset_dir/icon_32x32@2x.png"    &>/dev/null
+        sips -z 128 128   "$ICON_SOURCE" --out "$iconset_dir/icon_128x128.png"     &>/dev/null
+        sips -z 256 256   "$ICON_SOURCE" --out "$iconset_dir/icon_128x128@2x.png"  &>/dev/null
+        sips -z 256 256   "$ICON_SOURCE" --out "$iconset_dir/icon_256x256.png"     &>/dev/null
+        sips -z 512 512   "$ICON_SOURCE" --out "$iconset_dir/icon_256x256@2x.png"  &>/dev/null
 
         iconutil -c icns "$iconset_dir" -o "$app_bundle/Contents/Resources/flipclock.icns"
         rm -rf "$(dirname "$iconset_dir")"
+        icon_file="flipclock.icns"
         ok "Icon converted to .icns"
     else
-        cp "$SCRIPT_DIR/images/flipclock.png" "$app_bundle/Contents/Resources/flipclock.png"
+        cp "$ICON_SOURCE" "$app_bundle/Contents/Resources/flipclock.png"
         warn "sips/iconutil not found, using PNG icon (may not show in Dock)"
     fi
 
     # Info.plist
-    local icon_file="flipclock"
-    if [ -f "$app_bundle/Contents/Resources/flipclock.icns" ]; then
-        icon_file="flipclock.icns"
-    else
-        icon_file="flipclock.png"
-    fi
-
-    cat > "$app_bundle/Contents/Info.plist" <<EOF
+    cat > "$app_bundle/Contents/Info.plist" << EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -339,11 +429,9 @@ install_darwin() {
 EOF
     ok "Info.plist created"
     ok "App bundle installed: $app_bundle"
-
-    info "You can find $APP_NAME in ~/Applications or Launchpad."
 }
 
-# ─── Install (Windows) ───────────────────────
+# ─── Install: Windows ────────────────────────
 
 install_windows() {
     step "Installing on Windows"
@@ -357,7 +445,7 @@ install_windows() {
     ok "Binary installed: $install_dir/$exe_name"
 
     # Copy icon
-    cp "$SCRIPT_DIR/images/flipclock.png" "$install_dir/flipclock.png"
+    cp "$ICON_SOURCE" "$install_dir/flipclock.png"
 
     # Create Start Menu shortcut via PowerShell
     info "Creating Start Menu shortcut..."
@@ -369,7 +457,6 @@ install_windows() {
         shortcut_dir="$(wslpath "$start_menu" 2>/dev/null || echo "$start_menu")/Programs"
         mkdir -p "$shortcut_dir" 2>/dev/null || true
 
-        # Use PowerShell to create .lnk shortcut
         local win_install_dir
         win_install_dir="$(cygpath -w "$install_dir" 2>/dev/null || echo "$install_dir")"
 
@@ -393,20 +480,30 @@ install_windows() {
 
 # ─── Uninstall ───────────────────────────────
 
-uninstall() {
+do_uninstall() {
     step "Uninstalling $APP_NAME"
 
-    case "$OS" in
-        linux)
+    case "$PLATFORM" in
+        debian)
             rm -f "$HOME/.local/bin/$BIN_NAME"
-            rm -f "$HOME/.local/share/icons/hicolor/256x256/apps/flipclock.png"
-            rm -f "$HOME/.local/share/icons/hicolor/256x256/apps/${APP_ID}.png"
+            rm -f "$HOME/.local/share/icons/${APP_ID}.png"
             rm -f "$HOME/.local/share/applications/${APP_ID}.desktop"
-            gtk-update-icon-cache "$HOME/.local/share/icons/hicolor/" 2>/dev/null || true
+            update-desktop-database "$HOME/.local/share/applications" 2>/dev/null || true
+            ok "Removed from Linux (Debian)"
+            ;;
+        linux)
+            local install_dir="$HOME/.local/opt/$BIN_NAME"
+            local bin_link="$HOME/.local/bin/$BIN_NAME"
+            local desktop_file="$HOME/.local/share/applications/${APP_ID}.desktop"
+
+            [[ -L "$bin_link" ]] && rm "$bin_link" && ok "Removed symlink $bin_link"
+            [[ -f "$desktop_file" ]] && rm "$desktop_file" && ok "Removed desktop entry"
+            [[ -d "$install_dir" ]] && rm -rf "$install_dir" && ok "Removed install dir $install_dir"
+            rm -f "$HOME/.local/share/icons/${APP_ID}.png"
             update-desktop-database "$HOME/.local/share/applications" 2>/dev/null || true
             ok "Removed from Linux"
             ;;
-        darwin)
+        macos)
             rm -rf "$HOME/Applications/${APP_NAME}.app"
             ok "Removed from macOS"
             ;;
@@ -418,68 +515,162 @@ uninstall() {
             ;;
     esac
 
-    ok "$APP_NAME uninstalled successfully."
+    ok "$APP_NAME uninstalled."
+    exit 0
 }
+
+# ─── Clean previous installation ─────────────
+
+do_clean_previous() {
+    local found=false
+
+    case "$PLATFORM" in
+        debian)
+            [[ -f "$HOME/.local/bin/$BIN_NAME" ]] && found=true
+            ;;
+        linux)
+            [[ -d "$HOME/.local/opt/$BIN_NAME" ]] && found=true
+            ;;
+        macos)
+            [[ -d "$HOME/Applications/${APP_NAME}.app" ]] && found=true
+            ;;
+        windows)
+            [[ -d "$LOCALAPPDATA/FlipClock" ]] && found=true
+            ;;
+    esac
+
+    if [[ "$found" == false ]]; then
+        return
+    fi
+
+    info "Removing previous installation..."
+
+    case "$PLATFORM" in
+        debian)
+            rm -f "$HOME/.local/bin/$BIN_NAME"
+            rm -f "$HOME/.local/share/icons/${APP_ID}.png"
+            rm -f "$HOME/.local/share/applications/${APP_ID}.desktop"
+            ;;
+        linux)
+            rm -f "$HOME/.local/bin/$BIN_NAME"
+            rm -rf "$HOME/.local/opt/$BIN_NAME"
+            rm -f "$HOME/.local/share/icons/${APP_ID}.png"
+            rm -f "$HOME/.local/share/applications/${APP_ID}.desktop"
+            ;;
+        macos)
+            rm -rf "$HOME/Applications/${APP_NAME}.app"
+            ;;
+        windows)
+            rm -rf "$LOCALAPPDATA/FlipClock"
+            ;;
+    esac
+
+    ok "Previous installation removed"
+}
+
+# ─── Flags ───────────────────────────────────
+
+SKIP_BUILD=false
+UNINSTALL=false
+
+for arg in "$@"; do
+    case "$arg" in
+        --skip-build) SKIP_BUILD=true ;;
+        --uninstall)  UNINSTALL=true ;;
+        --help|-h)
+            echo "Usage: $(basename "$0") [OPTIONS]"
+            echo ""
+            echo "Build and install ${APP_NAME} for the current platform."
+            echo ""
+            echo "Supported platforms:"
+            echo "  Linux (Debian/Ubuntu)   Build and install binary + .desktop"
+            echo "  Linux (Arch/other)      Build and install to ~/.local/opt/ + symlink"
+            echo "  macOS                   Build and install .app bundle"
+            echo "  Windows                 Build and install to AppData + Start Menu shortcut"
+            echo ""
+            echo "Options:"
+            echo "  --skip-build   Skip build, install existing binary from source dir"
+            echo "  --uninstall    Remove installed app"
+            echo "  -h, --help     Show this help"
+            exit 0
+            ;;
+        *)
+            error "Unknown option: $arg"
+            exit 1
+            ;;
+    esac
+done
 
 # ─── Main ────────────────────────────────────
 
-main() {
-    echo -e "${BOLD}"
-    echo "  _____ _ _       ____ _            _    "
-    echo " |  ___| (_)_ __ / ___| | ___   ___| | __"
-    echo " | |_  | | | '_ \| |   | |/ _ \ / __| |/ /"
-    echo " |  _| | | | |_) | |___| | (_) | (__|   < "
-    echo " |_|   |_|_| .__/ \____|_|\___/ \___|_|\_\\"
-    echo "            |_|          Installer v$VERSION"
-    echo -e "${NC}"
+echo -e "${BOLD}"
+echo "  _____ _ _       ____ _            _    "
+echo " |  ___| (_)_ __ / ___| | ___   ___| | __"
+echo " | |_  | | | '_ \| |   | |/ _ \ / __| |/ /"
+echo " |  _| | | | |_) | |___| | (_) | (__|   < "
+echo " |_|   |_|_| .__/ \____|_|\___/ \___|_|\_\\"
+echo "            |_|          Installer v$VERSION"
+echo -e "${NC}"
 
-    detect_os
-    info "Detected OS: $OS"
+detect_platform
 
-    # Handle --uninstall flag
-    if [[ "${1:-}" == "--uninstall" ]]; then
-        uninstall
-        exit 0
-    fi
+if [[ "$UNINSTALL" == true ]]; then
+    do_uninstall
+fi
 
-    # Install dependencies
-    case "$OS" in
-        linux)   install_deps_linux ;;
-        darwin)  install_deps_darwin ;;
-        windows) install_deps_windows ;;
-    esac
+# Install dependencies
+install_deps
 
-    # Check Go
-    check_go
+# Check Go
+check_go
 
-    # Build
+# Build
+if [[ "$SKIP_BUILD" == true ]]; then
+    info "Skipping build (--skip-build)"
+else
     build
+fi
 
-    # Install
-    case "$OS" in
-        linux)   install_linux ;;
-        darwin)  install_darwin ;;
-        windows) install_windows ;;
-    esac
+# Stop running instances and remove previous installation
+kill_running
+do_clean_previous
 
-    # Clean up build artifact
-    rm -f "$SCRIPT_DIR/$BIN_NAME" "$SCRIPT_DIR/${BIN_NAME}.exe"
+# Install per platform
+case "$PLATFORM" in
+    debian)  install_debian ;;
+    linux)   install_linux_generic ;;
+    macos)   install_macos ;;
+    windows) install_windows ;;
+esac
 
-    echo ""
-    echo -e "${GREEN}${BOLD}$APP_NAME installed successfully!${NC}"
-    echo ""
+# Clean up build artifact
+rm -f "$SCRIPT_DIR/$BIN_NAME" "$SCRIPT_DIR/${BIN_NAME}.exe"
 
-    case "$OS" in
-        linux)
-            info "Launch from your app launcher or run: $BIN_NAME"
-            ;;
-        darwin)
-            info "Launch from ~/Applications or Spotlight."
-            ;;
-        windows)
-            info "Launch from the Start Menu or run the exe directly."
-            ;;
-    esac
-}
+# ─── Done ────────────────────────────────────
 
-main "$@"
+echo ""
+echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e "${GREEN} ${APP_NAME} v${VERSION} installed successfully!${NC}"
+echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo ""
+
+case "$PLATFORM" in
+    debian)
+        echo "  Run:           $BIN_NAME"
+        echo "  App launcher:  Search for '$APP_NAME'"
+        ;;
+    linux)
+        echo "  Run:           $BIN_NAME"
+        echo "  App launcher:  Search for '$APP_NAME'"
+        ;;
+    macos)
+        echo "  Open:          open ~/Applications/${APP_NAME}.app"
+        echo "  Or search:     Spotlight > '$APP_NAME'"
+        ;;
+    windows)
+        echo "  Run:           Search for '$APP_NAME' in Start Menu"
+        ;;
+esac
+
+echo "  Uninstall:     $0 --uninstall"
+echo ""
