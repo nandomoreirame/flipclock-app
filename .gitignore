@@ -39,3 +39,4 @@ FlipClock.tar.xz
 build-dir/
 fyne-cross/
 release/
+.forja/
