@@ -24,27 +24,182 @@ jobs:
       - name: Run tests
         run: xvfb-run go test -v -race ./...
 
-  release:
+  build-linux:
     needs: test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - uses: actions/setup-go@v5
         with:
           go-version: "1.22"
 
       - name: Install system dependencies
-        run: sudo apt-get update && sudo apt-get install -y gcc libgl1-mesa-dev xorg-dev
+        run: sudo apt-get update && sudo apt-get install -y gcc libgl1-mesa-dev xorg-dev xvfb
 
-      - name: Build Linux amd64
+      - name: Build binary
         env:
           CGO_ENABLED: 1
           GOOS: linux
           GOARCH: amd64
-        run: go build -ldflags "-s -w" -o flipclock-linux-amd64 .
+        run: go build -ldflags "-s -w" -o flipclock .
+
+      - name: Create .deb package
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          mkdir -p .nfpm-staging
+          cp flipclock .nfpm-staging/
+
+          # Install nfpm
+          go install github.com/goreleaser/nfpm/v2/cmd/nfpm@latest
+
+          # Generate nfpm config with correct paths for CI
+          cat > nfpm-ci.yaml << EOF
+          name: flipclock
+          arch: amd64
+          version: ${VERSION}
+          release: 1
+          section: utils
+          priority: optional
+          maintainer: Fernando Moreira <nandomoreira.me@gmail.com>
+          description: Minimal desktop flip clock widget built with Go and Fyne v2
+          vendor: nandomoreirame
+          homepage: https://github.com/nandomoreirame/flipclock-app
+          license: MIT
+
+          depends:
+            - libgl1
+            - libxi6
+            - libxcursor1
+            - libxrandr2
+            - libxinerama1
+            - libxxf86vm1
+
+          contents:
+            - src: flipclock
+              dst: /usr/bin/flipclock
+              file_info:
+                mode: 0755
+            - src: com.flipclock.app.desktop
+              dst: /usr/share/applications/com.flipclock.app.desktop
+            - src: images/flipclock.png
+              dst: /usr/share/icons/hicolor/256x256/apps/com.flipclock.app.png
+            - src: images/flipclock.svg
+              dst: /usr/share/icons/hicolor/scalable/apps/com.flipclock.app.svg
+          EOF
+
+          nfpm package -p deb -f nfpm-ci.yaml
+          mv flipclock_*.deb flipclock-linux-amd64.deb
+
+      - name: Create tarball
+        run: tar czf flipclock-linux-amd64.tar.gz flipclock
+
+      - name: Upload Linux artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-artifacts
+          path: |
+            flipclock-linux-amd64.deb
+            flipclock-linux-amd64.tar.gz
+
+  build-macos:
+    needs: test
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+
+      - name: Build binary
+        env:
+          CGO_ENABLED: 1
+        run: go build -ldflags "-s -w" -o flipclock .
+
+      - name: Create .app bundle
+        run: |
+          APP_DIR="FlipClock.app/Contents"
+          mkdir -p "$APP_DIR/MacOS"
+          mkdir -p "$APP_DIR/Resources"
+          cp flipclock "$APP_DIR/MacOS/FlipClock"
+
+          # Create Info.plist
+          VERSION="${GITHUB_REF_NAME#v}"
+          cat > "$APP_DIR/Info.plist" << EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>CFBundleExecutable</key>
+            <string>FlipClock</string>
+            <key>CFBundleIdentifier</key>
+            <string>com.flipclock.app</string>
+            <key>CFBundleName</key>
+            <string>FlipClock</string>
+            <key>CFBundleVersion</key>
+            <string>${VERSION}</string>
+            <key>CFBundleShortVersionString</key>
+            <string>${VERSION}</string>
+            <key>CFBundlePackageType</key>
+            <string>APPL</string>
+            <key>NSHighResolutionCapable</key>
+            <true/>
+          </dict>
+          </plist>
+          EOF
+
+          # Copy icon if exists
+          if [ -f images/flipclock.png ]; then
+            cp images/flipclock.png "$APP_DIR/Resources/icon.png"
+          fi
+
+          # Zip the .app bundle
+          zip -r flipclock-macos-amd64.zip FlipClock.app
+
+      - name: Upload macOS artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-artifacts
+          path: flipclock-macos-amd64.zip
+
+  build-windows:
+    needs: test
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+
+      - name: Build binary
+        env:
+          CGO_ENABLED: 1
+        run: go build -ldflags "-s -w -H windowsgui" -o flipclock.exe .
+
+      - name: Create zip
+        run: Compress-Archive -Path flipclock.exe -DestinationPath flipclock-windows-amd64.zip
+
+      - name: Upload Windows artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-artifacts
+          path: flipclock-windows-amd64.zip
+
+  release:
+    needs: [build-linux, build-macos, build-windows]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
 
       - name: Generate changelog
         id: changelog
@@ -66,4 +221,8 @@ jobs:
         with:
           body: ${{ steps.changelog.outputs.body }}
           generate_release_notes: false
-          files: flipclock-linux-amd64
+          files: |
+            artifacts/flipclock-linux-amd64.deb
+            artifacts/flipclock-linux-amd64.tar.gz
+            artifacts/flipclock-macos-amd64.zip
+            artifacts/flipclock-windows-amd64.zip
