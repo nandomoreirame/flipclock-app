@@ -8,6 +8,18 @@ This project adheres to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-04-01
+
+### Changed
+
+- Rewrite install.sh with platform detection (Debian, Arch/generic Linux, macOS, Windows).
+- Use absolute icon path in .desktop entry for reliable icon resolution across launchers.
+- Add previous installation cleanup before reinstalling.
+- Add `--skip-build` and `--help` flags to installer.
+- Fix process detection to use exact binary name match (prevents killing installer).
+
+---
+
 ## [0.1.0] - 2026-04-01
 
 ### Added
